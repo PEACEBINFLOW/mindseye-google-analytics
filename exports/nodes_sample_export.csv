@@ -1,0 +1,5 @@
+node_id,parent_node_id,title,prompt_type,doc_url,status,tags,created_at,updated_at
+PET-00001,,Summarize Gmail threads into a daily digest,workspace_automation,https://docs.google.com/document/d/EXAMPLE1,active,"gmail,summary,digest",2025-11-10T09:30:00Z,2025-11-10T10:05:00Z
+PET-00002,PET-00001,Summarize Gmail threads with action items,workspace_automation,https://docs.google.com/document/d/EXAMPLE2,active,"gmail,summary,actions",2025-11-10T11:00:00Z,2025-11-10T11:30:00Z
+PET-00003,,Generate Dev.to post from Google Doc,devlog,https://docs.google.com/document/d/EXAMPLE3,draft,"devto,doc,content",2025-11-11T08:15:00Z,2025-11-11T08:15:00Z
+PET-00004,,Review Google Docs with MindsEye,doc_review,https://docs.google.com/document/d/EXAMPLE4,active,"docs,review",2025-11-11T09:00:00Z,2025-11-12T07:45:00Z
