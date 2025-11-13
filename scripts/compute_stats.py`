@@ -1,0 +1,157 @@
+```python
+#!/usr/bin/env python3
+"""
+compute_stats.py
+
+Basic analytics for the MindsEye ledger exports.
+
+Reads:
+- exports/nodes_sample_export.csv
+- exports/runs_sample_export.csv
+
+Outputs:
+- Summary stats printed to stdout.
+- Optional: analytics_summary.json (basic aggregate view).
+
+Requires:
+- Python 3.8+
+- pandas (pip install pandas)
+"""
+
+import os
+import json
+from datetime import datetime
+from typing import Optional
+
+import pandas as pd
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EXPORTS_DIR = os.path.join(ROOT, "exports")
+
+NODES_CSV = os.path.join(EXPORTS_DIR, "nodes_sample_export.csv")
+RUNS_CSV = os.path.join(EXPORTS_DIR, "runs_sample_export.csv")
+
+
+def parse_date_safe(s: str) -> Optional[datetime]:
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def main():
+    print("[analytics] Loading exports...")
+
+    nodes = pd.read_csv(NODES_CSV)
+    runs = pd.read_csv(RUNS_CSV)
+
+    total_nodes = nodes["node_id"].nunique()
+    total_runs = runs["run_id"].nunique()
+
+    avg_runs_per_node = total_runs / total_nodes if total_nodes > 0 else 0.0
+
+    print("")
+    print("=== High-level ===")
+    print(f"Total nodes: {total_nodes}")
+    print(f"Total runs:  {total_runs}")
+    print(f"Avg runs per node: {avg_runs_per_node:.2f}")
+
+    # Runs by prompt_type
+    print("")
+    print("=== Runs by prompt_type ===")
+    runs_nodes = runs.merge(
+        nodes[["node_id", "prompt_type"]],
+        on="node_id",
+        how="left"
+    )
+    runs_by_prompt = (
+        runs_nodes.groupby("prompt_type")["run_id"]
+        .count()
+        .sort_values(ascending=False)
+    )
+    print(runs_by_prompt.to_string())
+
+    # Surface usage (run_context)
+    print("")
+    print("=== Surface usage (run_context) ===")
+    if "run_context" in runs.columns:
+        surface_usage = (
+            runs.groupby("run_context")["run_id"]
+            .count()
+            .sort_values(ascending=False)
+        )
+        print(surface_usage.to_string())
+    else:
+        print("No run_context column found in runs CSV.")
+
+    # Success metrics (assuming score 0–1)
+    if "score" in runs.columns:
+        print("")
+        print("=== Success metrics (threshold = 0.8) ===")
+        runs["success_flag"] = runs["score"].apply(
+            lambda x: 1 if (isinstance(x, (int, float)) and x >= 0.8) else 0
+        )
+        overall_success_rate = runs["success_flag"].sum() / total_runs if total_runs > 0 else 0.0
+        print(f"Overall success rate: {overall_success_rate:.2%}")
+
+        # Success rate per prompt_type
+        print("")
+        print("Success rate per prompt_type:")
+        grp = runs_nodes.copy()
+        grp["success_flag"] = runs["success_flag"]
+        success_by_prompt = (
+            grp.groupby("prompt_type")[["success_flag", "run_id"]]
+            .agg(
+                success_count=("success_flag", "sum"),
+                run_count=("run_id", "count"),
+            )
+        )
+        success_by_prompt["success_rate"] = success_by_prompt["success_count"] / success_by_prompt["run_count"]
+        print(success_by_prompt.sort_values("success_rate", ascending=False).to_string())
+
+        # Top models by avg score
+        print("")
+        print("Top models by avg score:")
+        models = (
+            runs.groupby("model")[["score", "run_id"]]
+            .agg(
+                avg_score=("score", "mean"),
+                run_count=("run_id", "count"),
+            )
+            .sort_values("avg_score", ascending=False)
+        )
+        print(models.to_string())
+    else:
+        print("")
+        print("No 'score' column found in runs CSV; skipping success metrics.")
+
+    # Optional: time-based metrics
+    if "run_time" in runs.columns:
+        print("")
+        print("=== Runs per day ===")
+        runs["run_time_parsed"] = runs["run_time"].apply(parse_date_safe)
+        runs["run_date"] = runs["run_time_parsed"].dt.date
+        runs_per_day = (
+            runs.groupby("run_date")["run_id"]
+            .count()
+            .sort_index()
+        )
+        print(runs_per_day.to_string())
+
+    # Write a basic JSON summary
+    summary = {
+        "total_nodes": int(total_nodes),
+        "total_runs": int(total_runs),
+        "avg_runs_per_node": avg_runs_per_node,
+        "runs_by_prompt_type": runs_by_prompt.to_dict(),
+    }
+    summary_path = os.path.join(ROOT, "analytics_summary.json")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2, default=str)
+
+    print("")
+    print(f"[analytics] Wrote summary to {summary_path}")
+
+
+if __name__ == "__main__":
+    main()
