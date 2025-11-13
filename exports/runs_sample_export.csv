@@ -1,0 +1,7 @@
+run_id,node_id,model,run_context,input_ref,output_ref,score,notes,run_time
+RUN-00001,PET-00001,gemini-1.5-pro,gmail,THREAD:abc123,"Daily digest created for 5 threads...",0.85,"Solid summary, minor tweaks needed",2025-11-10T10:10:00Z
+RUN-00002,PET-00001,gemini-1.5-pro,gmail,THREAD:def456,"Daily digest created for 3 threads...",0.90,"Clean output",2025-11-10T18:42:00Z
+RUN-00003,PET-00002,gemini-1.5-pro,gmail,THREAD:ghi789,"Digest with 4 action items...",0.78,"Missed one action item",2025-11-11T07:21:00Z
+RUN-00004,PET-00003,gemini-1.5-pro,devlog,DOC:post-draft-1,"Generated outline + intro...",0.92,"Good narrative",2025-11-11T09:40:00Z
+RUN-00005,PET-00004,gemini-1.5-pro,docs,DOC:doc-123,"Review comments added to top of doc",0.88,"Tone feedback helpful",2025-11-12T06:15:00Z
+RUN-00006,PET-00004,gemini-1.5-pro,docs,DOC:doc-456,"Review: structure and clarity notes",0.95,"Very strong edit",2025-11-12T08:02:00Z
